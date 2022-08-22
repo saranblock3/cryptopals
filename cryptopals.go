@@ -198,39 +198,8 @@ func q7() {
 	// fmt.Println(len(plainTextBlocks[0]))
 }
 
-// 8
-func q8() {
-	cipherTextSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/8.txt")
-	var bytesFromHex [][]byte
-	for _, currentSlice := range cipherTextSlices {
-		currentByteSlice, err := hex.DecodeString(string(currentSlice))
-		handleError(err)
-		bytesFromHex = append(bytesFromHex, currentByteSlice)
-	}
-	var chosenBytes []byte
-	for _, currentSlice := range bytesFromHex {
-		currentChunks := chunkSlice(currentSlice, 16)
-		for j, currentChunk := range currentChunks {
-			for k, otherChunk := range currentChunks[j+1:] {
-				if slices.Equal(currentChunk, otherChunk) {
-					chosenBytes = currentSlice
-					fmt.Println(j)
-					fmt.Println(k + j + 1)
-					fmt.Println(currentChunk)
-					fmt.Println(otherChunk)
-				}
-			}
-		}
-	}
-	fmt.Println()
-	for i, b := range chunkSlice(chosenBytes, 16) {
-		fmt.Println(i)
-		fmt.Println(b)
-	}
-}
-
 func main() {
-	q8()
+	q7()
 }
 
 // helper functions
