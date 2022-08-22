@@ -2,13 +2,13 @@ package main
 
 import (
 	"bytes"
+	"crypto/aes"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"math"
-	// "golang.org/x/exp/slices"
-	"crypto/aes"
+	"golang.org/x/exp/slices"
 	"io/ioutil"
+	"math"
 	"net/http"
 )
 
@@ -110,7 +110,6 @@ func q4() {
 			if currentMSE < lowestMSE {
 				lowestMSE = currentMSE
 				resString = string(testPlainText)
-				fmt.Println(currentMSE)
 			}
 		}
 	}
@@ -201,11 +200,37 @@ func q7() {
 
 // 8
 func q8() {
-
+	cipherTextSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/8.txt")
+	var bytesFromHex [][]byte
+	for _, currentSlice := range cipherTextSlices {
+		currentByteSlice, err := hex.DecodeString(string(currentSlice))
+		handleError(err)
+		bytesFromHex = append(bytesFromHex, currentByteSlice)
+	}
+	var chosenBytes []byte
+	for _, currentSlice := range bytesFromHex {
+		currentChunks := chunkSlice(currentSlice, 16)
+		for j, currentChunk := range currentChunks {
+			for k, otherChunk := range currentChunks[j+1:] {
+				if slices.Equal(currentChunk, otherChunk) {
+					chosenBytes = currentSlice
+					fmt.Println(j)
+					fmt.Println(k + j + 1)
+					fmt.Println(currentChunk)
+					fmt.Println(otherChunk)
+				}
+			}
+		}
+	}
+	fmt.Println()
+	for i, b := range chunkSlice(chosenBytes, 16) {
+		fmt.Println(i)
+		fmt.Println(b)
+	}
 }
 
 func main() {
-	q7()
+	q8()
 }
 
 // helper functions
@@ -294,47 +319,10 @@ func findKeySize(cipherText []byte) int {
 	var minNormDistance float64 = math.Inf(1)
 	var keySize int
 	for i := 2; i < 41; i++ {
-		testBlocks := [][]byte{
-			cipherText[:i],
-			cipherText[i : 2*i],
-			cipherText[2*i : 3*i],
-			cipherText[3*i : 4*i],
-			cipherText[4*i : 5*i],
-			cipherText[5*i : 6*i],
-			cipherText[6*i : 7*i],
-			cipherText[7*i : 8*i],
-			cipherText[8*i : 9*i],
-			cipherText[9*i : 10*i],
-			cipherText[10*i : 11*i],
-			cipherText[11*i : 12*i],
-			cipherText[12*i : 13*i],
-			cipherText[13*i : 14*i],
-			cipherText[14*i : 15*i],
-			cipherText[15*i : 16*i],
-			cipherText[16*i : 17*i],
-			cipherText[17*i : 18*i],
-			cipherText[18*i : 19*i],
-			cipherText[19*i : 20*i],
-			cipherText[20*i : 21*i],
-			cipherText[21*i : 22*i],
-			cipherText[22*i : 23*i],
-			cipherText[23*i : 24*i],
-			cipherText[24*i : 25*i],
-			cipherText[25*i : 26*i],
-			cipherText[26*i : 27*i],
-			cipherText[27*i : 28*i],
-			cipherText[28*i : 29*i],
-			cipherText[29*i : 30*i],
-			cipherText[30*i : 31*i],
-			cipherText[31*i : 32*i],
-			cipherText[32*i : 33*i],
-			cipherText[33*i : 34*i],
-			cipherText[34*i : 35*i],
-			cipherText[35*i : 36*i],
-			cipherText[36*i : 37*i],
-			cipherText[37*i : 38*i],
-			cipherText[38*i : 39*i],
-			cipherText[39*i : 40*i],
+		var testBlocks [][]byte
+
+		for i := 1; i < 41; i++ {
+			cipherText = append(cipherText, cipherText[i-1:i])
 		}
 		var normDistanceSum float64
 		var normDistanceAvg float64
