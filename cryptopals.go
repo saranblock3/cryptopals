@@ -1,14 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math"
-	"encoding/hex"
-	"encoding/base64"
-	"bytes"
 	// "golang.org/x/exp/slices"
-	"net/http"
+	"crypto/aes"
 	"io/ioutil"
+	"net/http"
 )
 
 // useful constants and variables
@@ -16,7 +17,7 @@ import (
 // 1
 func q1() {
 	s := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-	bytesFromHex, err := hex.DecodeString(s)	
+	bytesFromHex, err := hex.DecodeString(s)
 	handleError(err)
 	res := base64.StdEncoding.EncodeToString(bytesFromHex)
 	fmt.Println(res)
@@ -24,7 +25,7 @@ func q1() {
 
 // 2
 func q2() {
-	s0 := "1c0111001f010100061a024b53535009181c"	
+	s0 := "1c0111001f010100061a024b53535009181c"
 	s1 := "686974207468652062756c6c277320657965"
 	b0, err0 := hex.DecodeString(s0)
 	b1, err1 := hex.DecodeString(s1)
@@ -54,9 +55,9 @@ var engCharFreqMap = map[byte]float64{
 	56: 0, 57: 0, 58: 0, 59: 0, 60: 0,
 	61: 0, 62: 0, 63: 0, 64: 0, 69: 0.127,
 	84: 0.091, 65: 0.082, 79: 0.075, 73: 0.070, 78: 0.067,
-	83: 0.063, 72: 0.061, 82: 0.060, 68: 0.043,	 76: 0.040,
-	67: 0.028,	 85: 0.028, 77: 0.024, 87: 0.024, 70: 0.022,
-	71: 0.020, 89: 0.020, 80: 0.019, 66: 0.015,  86: 0.0098,
+	83: 0.063, 72: 0.061, 82: 0.060, 68: 0.043, 76: 0.040,
+	67: 0.028, 85: 0.028, 77: 0.024, 87: 0.024, 70: 0.022,
+	71: 0.020, 89: 0.020, 80: 0.019, 66: 0.015, 86: 0.0098,
 	75: 0.0077, 74: 0.0015, 88: 0.0015, 81: 0.00095, 90: 0.00074,
 	91: 0, 92: 0, 93: 0, 94: 0, 95: 0,
 	96: 0, 97: 0, 98: 0, 99: 0, 100: 0,
@@ -177,18 +178,40 @@ func q6() {
 
 // 7
 func q7() {
-	
+	cipherTextSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/7.txt")
+	cipherTextJoined := bytes.Join(cipherTextSlices, []byte(""))
+	cipherTextBytes, err := base64.StdEncoding.DecodeString(string(cipherTextJoined))
+	handleError(err)
+	cipher, err := aes.NewCipher([]byte("YELLOW SUBMARINE"))
+	handleError(err)
+	cipherTextBlocks := chunkSlice(cipherTextBytes, 16)
+	var plainTextBlocks [][]byte
+
+	for i := range cipherTextBlocks {
+		currentPlainTextBlock := make([]byte, 16)
+		cipher.Decrypt(currentPlainTextBlock, cipherTextBlocks[i])
+		plainTextBlocks = append(plainTextBlocks, currentPlainTextBlock)
+	}
+
+	plainText := bytes.Join(plainTextBlocks, []byte(""))
+	fmt.Println(string(plainText))
+
+	// fmt.Println(len(plainTextBlocks[0]))
+}
+
+// 8
+func q8() {
+
 }
 
 func main() {
-	q6()
+	q7()
 }
-
 
 // helper functions
 func handleError(err error) {
 	if err != nil {
-		fmt.Println("Error: %s", err.Error())
+		fmt.Printf("Error: %s\n", err.Error())
 	}
 }
 
@@ -205,7 +228,7 @@ func meanSquareError(dict0, dict1 map[byte]float64) float64 {
 func xorBytesByByte(cipherText []byte, c byte) []byte {
 	res := make([]byte, len(cipherText), len(cipherText))
 	for i, b := range cipherText {
-		res[i] = b ^ c	
+		res[i] = b ^ c
 	}
 	return res
 }
@@ -219,13 +242,13 @@ func resetBytesFreqMap(byteFreqMap *map[byte]float64) {
 func fillBytesFreqMap(byteFreqMap *map[byte]float64, bytes []byte) {
 	resetBytesFreqMap(byteFreqMap)
 	for _, b := range bytes {
-		(*byteFreqMap)[b] += float64(1)/float64(len(bytes))
+		(*byteFreqMap)[b] += float64(1) / float64(len(bytes))
 	}
 }
 
 func decryptSingleXor(cipherText []byte) (float64, byte, string) {
 	bytesFreqMap := make(map[byte]float64)
-	var MSE float64 = 1 
+	var MSE float64 = 1
 	var key byte
 	var plainText string
 	for i := 0; i < 128; i++ {
@@ -238,7 +261,7 @@ func decryptSingleXor(cipherText []byte) (float64, byte, string) {
 			plainText = string(testPlainText)
 		}
 	}
-	return MSE, key, plainText 
+	return MSE, key, plainText
 }
 
 func getByteSlicesFromUrl(url string) [][]byte {
@@ -259,7 +282,7 @@ func hammingDistance(byteSlc0, byteSlc1 []byte) int {
 	for i := range byteSlc0 {
 		xor := byteSlc0[i] ^ byteSlc1[i]
 		for x := xor; x > 0; x >>= 1 {
-			if (x&1) == 1 {
+			if (x & 1) == 1 {
 				count++
 			}
 		}
@@ -273,49 +296,49 @@ func findKeySize(cipherText []byte) int {
 	for i := 2; i < 41; i++ {
 		testBlocks := [][]byte{
 			cipherText[:i],
-			cipherText[i:2*i],
-			cipherText[2*i:3*i],
-			cipherText[3*i:4*i],
-			cipherText[4*i:5*i],
-			cipherText[5*i:6*i],
-			cipherText[6*i:7*i],
-			cipherText[7*i:8*i],
-			cipherText[8*i:9*i],
-			cipherText[9*i:10*i],
-			cipherText[10*i:11*i],
-			cipherText[11*i:12*i],
-			cipherText[12*i:13*i],
-			cipherText[13*i:14*i],
-			cipherText[14*i:15*i],
-			cipherText[15*i:16*i],
-			cipherText[16*i:17*i],
-			cipherText[17*i:18*i],
-			cipherText[18*i:19*i],
-			cipherText[19*i:20*i],
-			cipherText[20*i:21*i],
-			cipherText[21*i:22*i],
-			cipherText[22*i:23*i],
-			cipherText[23*i:24*i],
-			cipherText[24*i:25*i],
-			cipherText[25*i:26*i],
-			cipherText[26*i:27*i],
-			cipherText[27*i:28*i],
-			cipherText[28*i:29*i],
-			cipherText[29*i:30*i],
-			cipherText[30*i:31*i],
-			cipherText[31*i:32*i],
-			cipherText[32*i:33*i],
-			cipherText[33*i:34*i],
-			cipherText[34*i:35*i],
-			cipherText[35*i:36*i],
-			cipherText[36*i:37*i],
-			cipherText[37*i:38*i],
-			cipherText[38*i:39*i],
-			cipherText[39*i:40*i],
+			cipherText[i : 2*i],
+			cipherText[2*i : 3*i],
+			cipherText[3*i : 4*i],
+			cipherText[4*i : 5*i],
+			cipherText[5*i : 6*i],
+			cipherText[6*i : 7*i],
+			cipherText[7*i : 8*i],
+			cipherText[8*i : 9*i],
+			cipherText[9*i : 10*i],
+			cipherText[10*i : 11*i],
+			cipherText[11*i : 12*i],
+			cipherText[12*i : 13*i],
+			cipherText[13*i : 14*i],
+			cipherText[14*i : 15*i],
+			cipherText[15*i : 16*i],
+			cipherText[16*i : 17*i],
+			cipherText[17*i : 18*i],
+			cipherText[18*i : 19*i],
+			cipherText[19*i : 20*i],
+			cipherText[20*i : 21*i],
+			cipherText[21*i : 22*i],
+			cipherText[22*i : 23*i],
+			cipherText[23*i : 24*i],
+			cipherText[24*i : 25*i],
+			cipherText[25*i : 26*i],
+			cipherText[26*i : 27*i],
+			cipherText[27*i : 28*i],
+			cipherText[28*i : 29*i],
+			cipherText[29*i : 30*i],
+			cipherText[30*i : 31*i],
+			cipherText[31*i : 32*i],
+			cipherText[32*i : 33*i],
+			cipherText[33*i : 34*i],
+			cipherText[34*i : 35*i],
+			cipherText[35*i : 36*i],
+			cipherText[36*i : 37*i],
+			cipherText[37*i : 38*i],
+			cipherText[38*i : 39*i],
+			cipherText[39*i : 40*i],
 		}
 		var normDistanceSum float64
 		var normDistanceAvg float64
-		for j := 0; j < len(testBlocks) - 2; j++ {
+		for j := 0; j < len(testBlocks)-2; j++ {
 			for k := range testBlocks[j+1:] {
 				normDistanceSum += float64(hammingDistance(testBlocks[j], testBlocks[k])) / float64(i)
 			}
@@ -330,4 +353,21 @@ func findKeySize(cipherText []byte) int {
 		}
 	}
 	return keySize
+}
+
+func chunkSlice[T any](slice []T, chunkSize int) [][]T {
+	var chunks [][]T
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+
+		// necessary check to avoid slicing beyond
+		// slice capacity
+		if end > len(slice) {
+			end = len(slice)
+		}
+
+		chunks = append(chunks, slice[i:end])
+	}
+
+	return chunks
 }
