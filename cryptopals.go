@@ -140,6 +140,7 @@ func q8() {
 
 func main() {
 	runAndFormatSolutions()
+
 }
 
 // helper functions
