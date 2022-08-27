@@ -1,0 +1,7 @@
+package aesecb
+
+import ()
+
+func encrypt() {
+
+}

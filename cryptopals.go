@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"github.com/saranblock3/cryptopals/pkg/oracles/aesecb"
 	"github.com/saranblock3/cryptopals/pkg/utils"
-	// "github.com/saranblock3/cryptopals/resources"
-	// "gonum.org/v1/gonum/stat/combin"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
+	"time"
 )
 
 // 1
@@ -99,13 +99,7 @@ func q6() {
 
 	keySize := utils.FindKeySize(cipherTextBytes)
 
-	cipherTextTransposedBlocks := utils.TransposeByteSlice(cipherTextBytes, keySize)
-
-	var key []byte
-	for currentBlockIndex := range cipherTextTransposedBlocks {
-		keyByte, _, _ := utils.DecryptSingleByteXor(cipherTextTransposedBlocks[currentBlockIndex])
-		key = append(key, keyByte)
-	}
+	key := utils.FindRepeatingXorKey(cipherTextBytes, keySize)
 	plainText := utils.RepeatingXor(cipherTextBytes, key)
 
 	fmt.Println("Key:                ", string(key))
@@ -161,8 +155,12 @@ func handleError(err error) {
 func runAndFormatSolutions() {
 	for i := 0; i < len(solutions); i++ {
 		formatPuzzleOutputTop(i + 1)
+		startTime := time.Now()
 		solutions[i]()
+		elapsedTime := time.Since(startTime)
 		formatPuzzleOutputBottom()
+		log.Printf("Execution time: %s", elapsedTime)
+		paddingBottom()
 	}
 }
 
@@ -173,6 +171,9 @@ func formatPuzzleOutputTop(puzzleNumber int) {
 
 func formatPuzzleOutputBottom() {
 	fmt.Println("========================================")
+}
+
+func paddingBottom() {
 	fmt.Println()
 	fmt.Println()
 	fmt.Println()
