@@ -20,6 +20,7 @@ func ChunkSlice[T any](slice []T, chunkSize int) [][]T {
 	return chunks
 }
 
+// Tranposes a byte slice by grouping each nth element
 func TransposeByteSlice(byteSlice []byte, numBlocks int) [][]byte {
 	transposedBlocks := make([][]byte, numBlocks, numBlocks)
 	for currentBlockIndex := range transposedBlocks {
