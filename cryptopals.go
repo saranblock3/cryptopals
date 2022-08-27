@@ -2,14 +2,13 @@ package main
 
 import (
 	"bytes"
-	"crypto/aes"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/saranblock3/cryptopals/pkg/oracles/aesecb"
 	"github.com/saranblock3/cryptopals/pkg/utils"
-	"github.com/saranblock3/cryptopals/resources"
-	"golang.org/x/exp/slices"
-	"gonum.org/v1/gonum/stat/combin"
+	// "github.com/saranblock3/cryptopals/resources"
+	// "gonum.org/v1/gonum/stat/combin"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -34,13 +33,13 @@ func q2() {
 	handleError(err)
 	cipherTextBytes1, err := hex.DecodeString(cipherTextHex1)
 	handleError(err)
-	xorByteSlice, err := utils.XorByteSlice(cipherTextBytes0, cipherTextBytes1)
+	xorBytes, err := utils.XorByteSlice(cipherTextBytes0, cipherTextBytes1)
 	handleError(err)
-	res := hex.EncodeToString(xorByteSlice)
+	xorHex := hex.EncodeToString(xorBytes)
 
 	fmt.Println("Hex string 1:       ", cipherTextHex0)
 	fmt.Println("Hex string 2:       ", cipherTextHex1)
-	fmt.Println("XORed string:       ", res)
+	fmt.Println("XORed string:       ", xorHex)
 }
 
 // 3
@@ -51,18 +50,18 @@ func q3() {
 	key, plainText, _ := utils.DecryptSingleByteXor(cipherTextBytes)
 
 	fmt.Println("Cipher text hex:    ", cipherTextHex)
-	fmt.Println("Key:                ", key)
+	fmt.Println("Key:                ", string(key))
 	fmt.Println("Plain text:         ", plainText)
 }
 
 // 4
 func q4() {
-	cipherTextHexArray := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/4.txt")
+	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/4.txt")
 	var chosenCipherText string
 	var key byte
 	var plainText string
 	var lowestMse float64 = math.Inf(1)
-	for _, currentCipherTextBytes := range cipherTextHexArray {
+	for _, currentCipherTextBytes := range cipherTextHexSlices {
 		cipherTextBytes, err := hex.DecodeString(string(currentCipherTextBytes))
 		handleError(err)
 		currentKey, testPlainText, currentMse := utils.DecryptSingleByteXor(cipherTextBytes)
@@ -75,7 +74,7 @@ func q4() {
 	}
 
 	fmt.Println("Cipher text hex:    ", chosenCipherText)
-	fmt.Println("Key:                ", key)
+	fmt.Println("Key:                ", string(key))
 	fmt.Println("Plain text:         ", plainText)
 }
 
@@ -108,122 +107,75 @@ func q6() {
 		key = append(key, keyByte)
 	}
 	plainText := utils.RepeatingXor(cipherTextBytes, key)
-	fmt.Println("Key:", string(key))
-	fmt.Println("Plain text:", string(plainText))
+
+	fmt.Println("Key:                ", string(key))
+	fmt.Println("Plain text:         ", string(plainText))
 }
 
 // 7
 func q7() {
-	cipherTextSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/7.txt")
-	cipherTextJoined := bytes.Join(cipherTextSlices, []byte(""))
-	cipherTextBytes, err := base64.StdEncoding.DecodeString(string(cipherTextJoined))
+	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/7.txt")
+	cipherTextHex := bytes.Join(cipherTextHexSlices, []byte(""))
+	cipherTextBytes, err := base64.StdEncoding.DecodeString(string(cipherTextHex))
 	handleError(err)
-	cipher, err := aes.NewCipher([]byte("YELLOW SUBMARINE"))
-	handleError(err)
-	cipherTextBlocks := chunkSlice(cipherTextBytes, 16)
-	var plainTextBlocks [][]byte
+	key := []byte("YELLOW SUBMARINE")
+	plainText := aesecb.Decrypt(cipherTextBytes, key)
 
-	for i := range cipherTextBlocks {
-		currentPlainTextBlock := make([]byte, 16)
-		cipher.Decrypt(currentPlainTextBlock, cipherTextBlocks[i])
-		plainTextBlocks = append(plainTextBlocks, currentPlainTextBlock)
-	}
-
-	plainText := bytes.Join(plainTextBlocks, []byte(""))
-	fmt.Println(string(plainText))
-
-	// fmt.Println(len(plainTextBlocks[0]))
+	fmt.Println("Key:                ", string(key))
+	fmt.Println("Plain text:         ", string(plainText))
 }
 
 // 8
 func q8() {
-	cipherTextSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/8.txt")
-	var bytesFromHex [][]byte
-	for _, currentSlice := range cipherTextSlices {
+	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/8.txt")
+	var cipherTextByteSlices [][]byte
+	for _, currentSlice := range cipherTextHexSlices {
 		currentByteSlice, err := hex.DecodeString(string(currentSlice))
 		handleError(err)
-		bytesFromHex = append(bytesFromHex, currentByteSlice)
+		cipherTextByteSlices = append(cipherTextByteSlices, currentByteSlice)
 	}
 	var chosenBytes []byte
-	for _, currentSlice := range bytesFromHex {
-		currentChunks := chunkSlice(currentSlice, 16)
-		for j, currentChunk := range currentChunks {
-			for k, otherChunk := range currentChunks[j+1:] {
-				if slices.Equal(currentChunk, otherChunk) {
-					chosenBytes = currentSlice
-					fmt.Println(j)
-					fmt.Println(k + j + 1)
-					fmt.Println(currentChunk)
-					fmt.Println(otherChunk)
-				}
-			}
+	for _, currentSlice := range cipherTextByteSlices {
+		if utils.IsEcbEncrypted(currentSlice) {
+			chosenBytes = currentSlice
 		}
 	}
-	fmt.Println()
-	for i, b := range chunkSlice(chosenBytes, 16) {
-		fmt.Println(i)
-		fmt.Println(b)
-	}
+
+	fmt.Println("ECB encrypted text:", hex.EncodeToString(chosenBytes))
 }
 
 func main() {
-	q6()
+	runAndFormatSolutions()
 }
 
 // helper functions
+
+var solutions []func() = []func(){q1, q2, q3, q4, q5, q6, q7, q8}
+
 func handleError(err error) {
 	if err != nil {
 		fmt.Printf("Error: %s\n", err.Error())
 	}
 }
 
-func meanSquareError(dict0, dict1 map[byte]float64) float64 {
-	var sumSquaredErr float64 = 0
-	for k, _ := range dict0 {
-		diff := float64(dict1[k] - dict0[k])
-		sumSquaredErr += float64(math.Pow(diff, 2))
-	}
-	meanSquareErr := sumSquaredErr / float64(len(dict0))
-	return meanSquareErr
-}
-
-func xorBytesByByte(cipherText []byte, c byte) []byte {
-	res := make([]byte, len(cipherText), len(cipherText))
-	for i, b := range cipherText {
-		res[i] = b ^ c
-	}
-	return res
-}
-
-func resetBytesFreqMap(byteFreqMap *map[byte]float64) {
-	for k, _ := range *byteFreqMap {
-		(*byteFreqMap)[k] = 0
+func runAndFormatSolutions() {
+	for i := 0; i < len(solutions); i++ {
+		formatPuzzleOutputTop(i + 1)
+		solutions[i]()
+		formatPuzzleOutputBottom()
 	}
 }
 
-func fillBytesFreqMap(byteFreqMap *map[byte]float64, bytes []byte) {
-	resetBytesFreqMap(byteFreqMap)
-	for _, b := range bytes {
-		(*byteFreqMap)[b] += float64(1) / float64(len(bytes))
-	}
+func formatPuzzleOutputTop(puzzleNumber int) {
+	fmt.Println("Puzzle", puzzleNumber)
+	fmt.Println("========================================")
 }
 
-func decryptSingleXor(cipherText []byte) (float64, byte, string) {
-	bytesFreqMap := make(map[byte]float64)
-	var MSE float64 = 1
-	var key byte
-	var plainText string
-	for i := 0; i < 128; i++ {
-		testPlainText := bytes.ToUpper(xorBytesByByte(cipherText, byte(i)))
-		fillBytesFreqMap(&bytesFreqMap, testPlainText)
-		currentMSE := meanSquareError(resources.EngCharFreqMap, bytesFreqMap)
-		if currentMSE < MSE {
-			MSE = currentMSE
-			key = byte(i)
-			plainText = string(testPlainText)
-		}
-	}
-	return MSE, key, plainText
+func formatPuzzleOutputBottom() {
+	fmt.Println("========================================")
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
 }
 
 func getByteSlicesFromUrl(url string) [][]byte {
@@ -234,63 +186,4 @@ func getByteSlicesFromUrl(url string) [][]byte {
 	handleError(err)
 	strings := bytes.Split(text, []byte("\n"))
 	return strings
-}
-
-func hammingDistance(byteSlc0, byteSlc1 []byte) int {
-	if len(byteSlc0) != len(byteSlc1) {
-		panic("Undefined for inputs of unequal length")
-	}
-	var count int
-	for i := range byteSlc0 {
-		xor := byteSlc0[i] ^ byteSlc1[i]
-		for x := xor; x > 0; x >>= 1 {
-			if (x & 1) == 1 {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-func findKeySize(cipherText []byte) int {
-	var minNormDistance float64 = math.Inf(1)
-	var keySize int
-	for i := 2; i < 41; i++ {
-		var testBlocks [][]byte
-
-		for j := i; j < len(cipherText); {
-			testBlocks = append(testBlocks, cipherText[j-i:j])
-			j += i
-		}
-		var normDistanceSum float64
-		var normDistanceAvg float64
-		for j := 0; j < len(testBlocks)-2; j++ {
-			for k := range testBlocks[j+1:] {
-				normDistanceSum += float64(hammingDistance(testBlocks[j], testBlocks[k])) / float64(i)
-			}
-		}
-		normDistanceAvg = normDistanceSum / float64(combin.Binomial(len(testBlocks), 2))
-		if normDistanceAvg < minNormDistance {
-			minNormDistance = normDistanceAvg
-			keySize = i
-		}
-	}
-	return keySize
-}
-
-func chunkSlice[T any](slice []T, chunkSize int) [][]T {
-	var chunks [][]T
-	for i := 0; i < len(slice); i += chunkSize {
-		end := i + chunkSize
-
-		// necessary check to avoid slicing beyond
-		// slice capacity
-		if end > len(slice) {
-			end = len(slice)
-		}
-
-		chunks = append(chunks, slice[i:end])
-	}
-
-	return chunks
 }
