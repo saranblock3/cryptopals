@@ -61,6 +61,7 @@ func XorBytesByByte(cipherText []byte, key byte) []byte {
 	return resByteSlice
 }
 
+// Returns the result of using a repeating key xor on a piece of cipher/plain text
 func RepeatingXor(inputText []byte, key []byte) []byte {
 	outputText := make([]byte, len(inputText), len(inputText))
 	for i, currentByte := range inputText {
@@ -69,6 +70,7 @@ func RepeatingXor(inputText []byte, key []byte) []byte {
 	return outputText
 }
 
+// Finds the key size of a repeating key xor on a piece of cipher text
 func FindKeySize(cipherText []byte) int {
 	var minNormDistance float64 = math.Inf(1)
 	var keySize int
@@ -95,6 +97,7 @@ func FindKeySize(cipherText []byte) int {
 	return keySize
 }
 
+// Finds the key in a repeating key xor of some cipher text
 func FindRepeatingXorKey(cipherText []byte, keySize int) []byte {
 	cipherTextTransposedBlocks := TransposeByteSlice(cipherText, keySize)
 
@@ -106,6 +109,7 @@ func FindRepeatingXorKey(cipherText []byte, keySize int) []byte {
 	return key
 }
 
+// Predicate testing if cipher text is ecb ecnrypted
 func IsEcbEncrypted(cipherText []byte) bool {
 	cipherTextChunks := ChunkSlice(cipherText, 16)
 	for currentChunkIndex, currentChunk := range cipherTextChunks {
