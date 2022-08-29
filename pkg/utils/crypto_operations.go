@@ -2,11 +2,14 @@ package utils
 
 import (
 	"bytes"
+	cryptorand "crypto/rand"
 	"errors"
 	"github.com/saranblock3/cryptopals/resources"
 	"golang.org/x/exp/slices"
 	"gonum.org/v1/gonum/stat/combin"
 	"math"
+	"math/rand"
+	"time"
 )
 
 // Performs bitwise xor on two byte slices and returns the result (with an error)
@@ -120,4 +123,53 @@ func IsEcbEncrypted(cipherText []byte) bool {
 		}
 	}
 	return false
+}
+
+// Implements PKCS#7 padding on plain text
+func Pkcs7Padding(plainText []byte, blockLength int) ([]byte, error) {
+	paddingLength := blockLength - len(plainText)
+	if paddingLength < 0 {
+		return nil, errors.New("Block is larger than block size!")
+	}
+	var padding []byte
+	for i := 0; i < paddingLength; i++ {
+		paddingChunk := byte(paddingLength)
+		padding = append(padding, paddingChunk)
+	}
+	paddedPlainText := append(plainText, padding...)
+	return paddedPlainText, nil
+}
+
+func GenerateRandomKey(keyLength int) ([]byte, error) {
+	key := make([]byte, keyLength)
+	_, err := cryptorand.Read(key)
+	return key, err
+}
+
+func RandomPrePadding(plainText []byte) []byte {
+	var padding []byte
+	rand.Seed(time.Now().UnixNano())
+	paddingLength := rand.Intn(6) + 5
+	for i := 0; i < paddingLength; i++ {
+		padding = append(padding, byte(rand.Intn(256)))
+	}
+	paddedPlainText := append(padding, plainText...)
+	return paddedPlainText
+}
+
+func RandomPostPadding(plainText []byte) []byte {
+	var padding []byte
+	rand.Seed(time.Now().UnixNano())
+	paddingLength := rand.Intn(6) + 5
+	for i := 0; i < paddingLength; i++ {
+		padding = append(padding, byte(rand.Intn(256)))
+	}
+	paddedPlainText := append(plainText, padding...)
+	return paddedPlainText
+}
+
+func RandomWrapPadding(plainText []byte) []byte {
+	prePaddedPlainText := RandomPrePadding(plainText)
+	paddedPlainText := RandomPostPadding(prePaddedPlainText)
+	return paddedPlainText
 }

@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/saranblock3/cryptopals/pkg/oracles"
+	"github.com/saranblock3/cryptopals/pkg/oracles/aescbc"
 	"github.com/saranblock3/cryptopals/pkg/oracles/aesecb"
 	"github.com/saranblock3/cryptopals/pkg/utils"
 	"io/ioutil"
@@ -14,7 +16,7 @@ import (
 	"time"
 )
 
-// 1
+// 1 - Convert hex to base64
 func q1() {
 	cipherTextHex := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
 	cipherTextBytes, err := hex.DecodeString(cipherTextHex)
@@ -25,7 +27,7 @@ func q1() {
 	fmt.Println("Base 64 String:     ", res)
 }
 
-// 2
+// 2 - Fixed XOR
 func q2() {
 	cipherTextHex0 := "1c0111001f010100061a024b53535009181c"
 	cipherTextHex1 := "686974207468652062756c6c277320657965"
@@ -42,7 +44,7 @@ func q2() {
 	fmt.Println("XORed string:       ", xorHex)
 }
 
-// 3
+// 3 - Single-byte XOR cipher
 func q3() {
 	cipherTextHex := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 	cipherTextBytes, err := hex.DecodeString(cipherTextHex)
@@ -54,7 +56,7 @@ func q3() {
 	fmt.Println("Plain text:         ", plainText)
 }
 
-// 4
+// 4 - Detect single-character XOR
 func q4() {
 	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/4.txt")
 	var chosenCipherText string
@@ -78,7 +80,7 @@ func q4() {
 	fmt.Println("Plain text:         ", plainText)
 }
 
-// 5
+// 5 - Implement repeating-key XOR
 func q5() {
 	plainTextBytes := []byte("Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal")
 	key := []byte("ICE")
@@ -90,7 +92,7 @@ func q5() {
 	fmt.Println("Cipher text hex:    ", cipherTextHex)
 }
 
-// 6
+// 6 - Break repeating-key XOR
 func q6() {
 	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/6.txt")
 	cipherTextHex := bytes.Join(cipherTextHexSlices, []byte(""))
@@ -106,7 +108,7 @@ func q6() {
 	fmt.Println("Plain text:         ", string(plainText))
 }
 
-// 7
+// 7 - AES in ECB mode
 func q7() {
 	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/7.txt")
 	cipherTextHex := bytes.Join(cipherTextHexSlices, []byte(""))
@@ -119,7 +121,7 @@ func q7() {
 	fmt.Println("Plain text:         ", string(plainText))
 }
 
-// 8
+// 8 - Detect AES in ECB mode
 func q8() {
 	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/8.txt")
 	var cipherTextByteSlices [][]byte
@@ -135,17 +137,46 @@ func q8() {
 		}
 	}
 
-	fmt.Println("ECB encrypted text:", hex.EncodeToString(chosenBytes))
+	fmt.Println("ECB encrypted text: ", hex.EncodeToString(chosenBytes))
+}
+
+// 9 - Implement PKCS#7 padding
+func q9() {
+	plainText := []byte("YELLOW SUBMARINE")
+	paddedPlainText, err := utils.Pkcs7Padding(plainText, 20)
+	handleError(err)
+
+	fmt.Println("Plain text:         ", string(plainText))
+	fmt.Println("Padded plain text:  ", string(paddedPlainText))
+}
+
+func q10() {
+	cipherTextHexSlices := getByteSlicesFromUrl("https://cryptopals.com/static/challenge-data/10.txt")
+	cipherTextHex := bytes.Join(cipherTextHexSlices, []byte(""))
+	cipherTextBytes, err := base64.StdEncoding.DecodeString(string(cipherTextHex))
+	handleError(err)
+	key := []byte("YELLOW SUBMARINE")
+	plainText := aescbc.Decrypt(cipherTextBytes, key)
+
+	fmt.Println("Key:                ", string(key))
+	fmt.Println("Plain text:         ", string(plainText))
+}
+
+func q11() {
+	plainText := []byte("")
+	cipherText := oracles.EcbCbcEncryptionOracle(plainText)
+	detectedMode := oracles.EcbCbcDetectionOracle(cipherText)
+	fmt.Println(detectedMode)
 }
 
 func main() {
-	runAndFormatSolutions()
-
+	// runAndFormatSolutions()
+	q11()
 }
 
 // helper functions
 
-var solutions []func() = []func(){q1, q2, q3, q4, q5, q6, q7, q8}
+var solutions []func() = []func(){q1, q2, q3, q4, q5, q6, q7, q8, q9, q10}
 
 func handleError(err error) {
 	if err != nil {

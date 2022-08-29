@@ -12,7 +12,8 @@ func Encrypt(plainText []byte, key []byte) []byte {
 	var cipherTextBlocks [][]byte
 	for currentBlockIndex := range plainTextBlocks {
 		currentCipherTextBlock := make([]byte, 16)
-		cipher.Encrypt(currentCipherTextBlock, plainTextBlocks[currentBlockIndex])
+		currentPaddedPlainTextBlock, _ := utils.Pkcs7Padding(plainTextBlocks[currentBlockIndex], 16)
+		cipher.Encrypt(currentCipherTextBlock, currentPaddedPlainTextBlock)
 		cipherTextBlocks = append(cipherTextBlocks, currentCipherTextBlock)
 	}
 	cipherText := bytes.Join(cipherTextBlocks, []byte(""))
