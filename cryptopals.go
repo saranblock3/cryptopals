@@ -5,15 +5,16 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/saranblock3/cryptopals/pkg/oracles"
-	"github.com/saranblock3/cryptopals/pkg/oracles/aescbc"
-	"github.com/saranblock3/cryptopals/pkg/oracles/aesecb"
-	"github.com/saranblock3/cryptopals/pkg/utils"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"time"
+
+	"github.com/saranblock3/cryptopals/pkg/oracles"
+	"github.com/saranblock3/cryptopals/pkg/oracles/aescbc"
+	"github.com/saranblock3/cryptopals/pkg/oracles/aesecb"
+	"github.com/saranblock3/cryptopals/pkg/utils"
 )
 
 // 1 - Convert hex to base64
@@ -163,15 +164,15 @@ func q10() {
 }
 
 func q11() {
-	plainText := []byte("")
+	plainText := []byte("yellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarineyellow submarine")
 	cipherText := oracles.EcbCbcEncryptionOracle(plainText)
 	detectedMode := oracles.EcbCbcDetectionOracle(cipherText)
 	fmt.Println(detectedMode)
 }
 
 func main() {
-	// runAndFormatSolutions()
-	q11()
+	runAndFormatSolutions()
+	// q11()
 }
 
 // helper functions
